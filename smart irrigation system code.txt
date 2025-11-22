@@ -1,0 +1,72 @@
+#include <dummy.h>
+#define BLYNK_TEMPLATE_ID "TMPL3Lfeb0q0H"
+#define BLYNK_TEMPLATE_NAME "smart irrigation system"
+[9:00 pm, 22/11/2025] Ankush Varma Satna Iet: #define BLYNK_AUTH_TOKEN
+"N3AFJMSzY5fpMeKbwmdIPqBTiaryAhPH"
+#define BLYNK_PRINT Serial
+#include <dummy.h>
+#include <ESP8266WiFi.h> // WiFi library for ESP8266
+#include <BlynkSimpleEsp8266.h> // Blynk library for ESP8266
+// Authentication and Wi-Fi credentials
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "Redmi 125G";
+char pass[] = "74153475";
+// Pins
+#define RELAY_PIN 4// Relay connected to D2 (GPIO4)
+#define MOISTURE_PIN A0 // Soil moisture sensor connected to A0
+// Soil moisture threshold (adjust as necessary)
+int moistureThreshold = 500; // This will depend on your sensor
+// Blynk virtual button handler for relay
+BLYNK_WRITE(V1) {
+ int relayState = param.asInt(); // Read relay state (0 or 1)
+
+ if (relayState == 1) {
+ digitalWrite(RELAY_PIN, HIGH); // Tur…
+[9:02 pm, 22/11/2025] Ankush Varma Satna Iet: Serial.begin(115200);
+
+ pinMode(RELAY_PIN, OUTPUT); // Set relay pin as OUTPUT
+ digitalWrite(RELAY_PIN, LOW); // Ensure relay is OFF initially
+ pinMode(MOISTURE_PIN, INPUT); // Set moisture sensor pin as INPUT
+
+ // Connecting to WiFi
+ Serial.print("Connecting to WiFi...");
+ WiFi.begin(ssid, pass);
+ while (WiFi.status() != WL_CONNECTED) {
+ delay(300);
+ Serial.print(".");
+ }
+
+ Serial.println("\nWiFi Connected!");
+ Serial.print("IP Address: ");
+ Serial.println(WiFi.localIP());
+
+ // Connecting to Blynk
+ Blynk.begin(auth, ssid, pass);
+ Serial.println("Connected to Blynk!");
+ }
+ void loop() {
+ Blynk.run(); // Run Blynk tasks
+ // Read raw analog value from moisture sensor
+ int moistureValue = analogRead(MOISTURE_PIN);
+ // Map raw value to percentage (0–100%)
+ // Dry soil = high raw value → low percentage
+ // Wet soil = low raw value → high percentage
+ int moisturePercent = map(moistureValue, 1023, 0, 0, 100);
+[9:02 pm, 22/11/2025] Ankush Varma Satna Iet: moisturePercent = constrain(moisturePercent, 0, 100); // Ensure within 0–100
+range
+ Serial.print("Raw Moisture Value: ");
+ Serial.println(moistureValue);
+ Serial.print("Soil Moisture (%): ");
+ Serial.println(moisturePercent);
+ // Send percentage value to Blynk gauge on V8
+ Blynk.virtualWrite(V7, moisturePercent);
+ // Auto-control relay based on moisture percentage
+ if (moisturePercent > 50) { // Below 30% → dry soil
+ digitalWrite(RELAY_PIN, HIGH);
+ Serial.println("Relay OFF - Moisture Sufficient");
+ } else {
+ digitalWrite(RELAY_PIN, LOW);
+ Serial.println("Relay ON - Moisture Low");
+
+ }
+delay(2000); // Read every 2 seconds
